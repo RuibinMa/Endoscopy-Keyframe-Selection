@@ -77,6 +77,7 @@ def main(args):
     
     filelist = os.listdir(data_dir)
     filelist.sort()
+    #filelist = filelist[3400: 3450]
     count = 1
     prev_of = None
     
@@ -130,27 +131,41 @@ def main(args):
     
     # use homography estimation to eliminate the redundant candidates
     keyframes = []
-    score = np.ones([len(localminima)])
+    score = []
     for i in range(len(order)):
         print 'Homography estimation: %d / %d   '%(i, len(localminima))
         if order[i] == 0 or order[i] == len(localminima)-1:
             keyframes.append(localminima[order[i]])
+            score.append(0.9)
         else:
             ID = order[i]
+
             PrevName = D[localminima[ID]].prev.data
             NextName = D[localminima[ID]].next.data
             Prev = readImage(data_dir + PrevName)
             Next = readImage(data_dir + NextName)
             H = EstimateHomography(img1=Prev, img2=Next, use_builtin_ransac=True)
             warpped = cv2.warpPerspective(Prev, H, (Next.shape[1], Next.shape[0]))
-            score[i] = correlation_coefficient(warpped, Next)
-            if score[i] > 0.9:
+            s = correlation_coefficient(warpped, Next)
+            if s > 0.9:
                 dl.remove_byaddress(D[localminima[ID]])
                 print 'Redundant: ' + localminima[ID]
             else:
                 keyframes.append(localminima[order[i]])
+                score.append(s)
                 print 'Keyframe:  ' + localminima[ID]
-   
+            #if localminima[ID] == 'frame3423.jpg':
+            #    print PrevName
+            #    print NextName
+            #    print score[ID]
+            #    print '-----------------------'
+            
+    
+    ordkeyframes = np.argsort(keyframes)
+    keyframes.sort()
+    
+    score = np.asarray(score)
+    score = score[np.asarray(ordkeyframes)]   
     # output result to file    
     for i in keyframes:
         os.system('cp ' + data_dir + i + ' ' + outputfolder + i)
@@ -159,7 +174,16 @@ def main(args):
         os.remove(resultfile)
     thefile = open(resultfile, 'w')
     for i in keyframes:
-        thefile.write("%s\n" % i)          
+        thefile.write("%s\n" % i)
+    
+    # divide the sequence into shots
+    sub_sequences = data_base_dir + 'subsequences.txt'
+    if os.path.exists(sub_sequences):
+        os.remove(sub_sequences)
+    subfile = open(sub_sequences, 'w')
+    for i in range(len(score)):
+        subfile.write('%s %.4f\n' % (keyframes[i], score[i]))
+              
     
     print '%d optical flow local minima'%len(localminima)
     print 'Selected %d / %d (%.2f%%) frames as keyframes'%(len(keyframes), len(filelist), 100.0*float(len(keyframes))/float(len(filelist)))
@@ -174,8 +198,8 @@ if __name__ == '__main__':
         default=True,
         help="whether use homography as a further step to extract frames")
     parser.add_argument("--data_base_dir", type=str, 
-        #default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_004/",
-        default="/home/ruibinma/Desktop/",
+        default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
+        #default="/home/ruibinma/Desktop/",
         help="data_base_dir: this folder should contain the folder images-raw")
     args = parser.parse_args()
     start_time = time.time()

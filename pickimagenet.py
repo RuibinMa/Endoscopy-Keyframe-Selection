@@ -4,9 +4,13 @@ Created on Mon Aug 15 11:27:48 2016
 
 @author: wrlife
 """
-#caffe_root = '/playpen/software/caffe/' 
-caffe_root = '/home/ruibinma/caffe/'
+
+
 import caffe
+import os
+#caffe_root = '/playpen/software/caffe/' 
+#caffe_root = '/home/ruibinma/caffe/'
+caffe_root = os.environ['CAFFE_ROOT'] + '/'
 
 caffe.set_device(0)
 caffe.set_mode_gpu()
@@ -18,7 +22,7 @@ import tempfile
 from caffe import layers as L
 from caffe import params as P
 
-import os
+
 weights = caffe_root + 'models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel'
 assert os.path.exists(weights)
 
