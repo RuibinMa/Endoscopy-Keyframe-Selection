@@ -16,7 +16,7 @@ from pickimagenet import *
 from Homography import EstimateHomography
 from Homography import readImage
 from DoubleList import DoubleList
-from scipy.ndimage.filters import minimum_filter1d
+from scipy.ndimage.filters import minimum_filter1d, maximum_filter1d
 
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
@@ -30,9 +30,13 @@ def correlation_coefficient(patch1, patch2):
         return product
 
 def main(args):
-    data_base_dir = args.data_base_dir
+    data_base_dir = args.dir
     data_dir= data_base_dir + "images-raw/"
     outputfolder = data_base_dir + 'keyframes/'
+    min_shot_length = args.min_shot_length
+    nmins_window_size = args.nmins_window_size
+    percentile_threshold = args.percentile_threshold
+    absolute_threshold = args.absolute_threshold
     
     if os.path.isdir(data_base_dir + 'classifiedgood'):
         rmtree(data_base_dir + 'classifiedgood')
@@ -77,7 +81,7 @@ def main(args):
     
     filelist = os.listdir(data_dir)
     filelist.sort()
-    #filelist = filelist[3400: 3450]
+    #filelist = filelist[3500:4500]
     count = 1
     prev_of = None
     
@@ -102,7 +106,7 @@ def main(args):
                 else:
                     cur_of = rgb2gray(im)
                     flow = cv2.calcOpticalFlowFarneback(prev_of, cur_of, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-                    opticalflowscore.append(np.sum(np.absolute(flow[..., 0])) + np.sum(np.absolute(flow[..., 1])))
+                    opticalflowscore.append((np.sum(np.absolute(flow[..., 0])) + np.sum(np.absolute(flow[..., 1]))) / cur_of.size)
                 prev_of = cur_of
                 
     # find the local minima of the optical flow motion estimation
@@ -166,28 +170,81 @@ def main(args):
     
     score = np.asarray(score)
     score = score[np.asarray(ordkeyframes)]   
+    
+    # key frame selection
+    # optical flow boundary detection
+    boundaries = []
+    threshold = np.percentile(opticalflowscore, percentile_threshold)
+    opticalextrema = maximum_filter1d(opticalflowscore, nmins_window_size)
+    for i in range(len(opticalflowscore)):
+        if opticalflowscore[i] == opticalextrema[i] and opticalflowscore[i] > threshold and opticalflowscore[i] > absolute_threshold:
+            boundaries.append(classifiedgood[i])
+    if boundaries[-1] is not classifiedgood[-1]:
+        boundaries.append(classifiedgood[-1])
+    
+    
+    shots = []
+    boundaryid = 0
+    shot = []
+    for i in range(len(keyframes)):
+        if keyframes[i] <= boundaries[boundaryid]:
+            shot.append(keyframes[i])
+        else:
+            shots.append(shot)
+            shot = []
+            shot.append(keyframes[i])
+            boundaryid = boundaryid + 1
+    shots.append(shot)
+    
+    #print shots
+    #print len(shots)
+    
+    final_valid_frames = 0
+    subid = 0
+    for i in range(len(shots)):
+        shot = shots[i]
+        print 'shot %d: %d frames' %(i, len(shot)),
+        if len(shot) > min_shot_length:
+            subfolder = outputfolder + str(subid) + '/'
+            os.mkdir(subfolder)
+            for j in shot:
+                os.system('cp ' + data_dir + j + ' ' + subfolder + j)
+            print ' '
+            final_valid_frames = final_valid_frames + len(shot)
+            subid = subid + 1
+        else:
+            print '     discarded'
+        
+    
     # output result to file    
-    for i in keyframes:
-        os.system('cp ' + data_dir + i + ' ' + outputfolder + i)
-    resultfile = data_base_dir + 'keyframes.txt'
-    if os.path.exists(resultfile):
-        os.remove(resultfile)
-    thefile = open(resultfile, 'w')
-    for i in keyframes:
-        thefile.write("%s\n" % i)
+    #for i in keyframes:
+    #    os.system('cp ' + data_dir + i + ' ' + outputfolder + i)
+    #resultfile = data_base_dir + 'keyframes.txt'
+    #if os.path.exists(resultfile):
+    #    os.remove(resultfile)
+    #thefile = open(resultfile, 'w')
+    #for i in keyframes:
+    #    thefile.write("%s\n" % i)
     
     # divide the sequence into shots
-    sub_sequences = data_base_dir + 'subsequences.txt'
-    if os.path.exists(sub_sequences):
-        os.remove(sub_sequences)
-    subfile = open(sub_sequences, 'w')
-    for i in range(len(score)):
-        subfile.write('%s %.4f\n' % (keyframes[i], score[i]))
-              
+    #sub_sequences = data_base_dir + 'subsequences.txt'
+    #if os.path.exists(sub_sequences):
+    #    os.remove(sub_sequences)
+    #subfile = open(sub_sequences, 'w')
+    #for i in range(len(score)):
+    #    subfile.write('%s %.4f\n' % (keyframes[i], score[i]))
     
-    print '%d optical flow local minima'%len(localminima)
-    print 'Selected %d / %d (%.2f%%) frames as keyframes'%(len(keyframes), len(filelist), 100.0*float(len(keyframes))/float(len(filelist)))
-
+    #offilename = data_base_dir + 'opticalflowscore.txt'
+    #if os.path.exists(offilename):
+    #    os.remove(offilename)
+    #offile = open(offilename, 'w')
+    #for i in range(len(opticalflowscore)):
+    #    offile.write('%s %.4f\n' % (classifiedgood[i], opticalflowscore[i]))         
+    
+    print '%d optical flow local minima' % len(localminima)
+    print 'Selected %d / %d (%.2f%%) frames as keyframes' % (final_valid_frames, len(filelist), 100.0*float(len(keyframes))/float(len(filelist)))
+    print 'Split the sequence into %d sub-sequences' % subid
+    
 if __name__ == '__main__':
     import argparse
     import time
@@ -197,10 +254,22 @@ if __name__ == '__main__':
     parser.add_argument("--use_homography", type=bool, 
         default=True,
         help="whether use homography as a further step to extract frames")
-    parser.add_argument("--data_base_dir", type=str, 
+    parser.add_argument("--dir", type=str, 
         default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
         #default="/home/ruibinma/Desktop/",
         help="data_base_dir: this folder should contain the folder images-raw")
+    parser.add_argument("--min_shot_length", type=int, 
+        default=40,
+        help="minimum number of frames that a shot should contain")
+    parser.add_argument("--nmins_window_size", type=int, 
+        default=301,
+        help="window size of non-minimum suppression")
+    parser.add_argument("--percentile_threshold", type=int, 
+        default=99,
+        help="percentile threshold for optical flow boundary detection")
+    parser.add_argument("--absolute_threshold", type=int, 
+        default=5,
+        help="absolute threshold for optical flow boundary detection (in pixel)")
     args = parser.parse_args()
     start_time = time.time()
     main(args)
