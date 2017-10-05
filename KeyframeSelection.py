@@ -37,6 +37,7 @@ def main(args):
     nmins_window_size = args.nmins_window_size
     percentile_threshold = args.percentile_threshold
     absolute_threshold = args.absolute_threshold
+    ignore_ends = args.ignore_ends
     
     if os.path.isdir(data_base_dir + 'classifiedgood'):
         rmtree(data_base_dir + 'classifiedgood')
@@ -81,7 +82,7 @@ def main(args):
     
     filelist = os.listdir(data_dir)
     filelist.sort()
-    #filelist = filelist[3500:4500]
+    #filelist = filelist[3000:3100]
     count = 1
     prev_of = None
     
@@ -173,13 +174,16 @@ def main(args):
     
     # key frame selection
     # optical flow boundary detection
+    if ignore_ends:
+        opticalflowscore[:int(len(opticalflowscore)*0.1)] = np.zeros_like(opticalflowscore[:int(len(opticalflowscore)*0.1)]) 
+        opticalflowscore[int(len(opticalflowscore)*0.9):] = np.zeros_like(opticalflowscore[int(len(opticalflowscore)*0.9):])
     boundaries = []
     threshold = np.percentile(opticalflowscore, percentile_threshold)
     opticalextrema = maximum_filter1d(opticalflowscore, nmins_window_size)
     for i in range(len(opticalflowscore)):
         if opticalflowscore[i] == opticalextrema[i] and opticalflowscore[i] > threshold and opticalflowscore[i] > absolute_threshold:
             boundaries.append(classifiedgood[i])
-    if boundaries[-1] is not classifiedgood[-1]:
+    if len(boundaries) == 0 or boundaries[-1] is not classifiedgood[-1]:
         boundaries.append(classifiedgood[-1])
     
     
@@ -196,15 +200,15 @@ def main(args):
             boundaryid = boundaryid + 1
     shots.append(shot)
     
-    #print shots
-    #print len(shots)
+    print shots
+    print len(shots)
     
     final_valid_frames = 0
     subid = 0
     for i in range(len(shots)):
         shot = shots[i]
         print 'shot %d: %d frames' %(i, len(shot)),
-        if len(shot) > min_shot_length:
+        if 0 and len(shot) > min_shot_length:
             subfolder = outputfolder + str(subid) + '/'
             os.mkdir(subfolder)
             for j in shot:
@@ -217,14 +221,14 @@ def main(args):
         
     
     # output result to file    
-    #for i in keyframes:
-    #    os.system('cp ' + data_dir + i + ' ' + outputfolder + i)
-    #resultfile = data_base_dir + 'keyframes.txt'
-    #if os.path.exists(resultfile):
-    #    os.remove(resultfile)
-    #thefile = open(resultfile, 'w')
-    #for i in keyframes:
-    #    thefile.write("%s\n" % i)
+    for i in keyframes:
+        os.system('cp ' + data_dir + i + ' ' + outputfolder + i)
+    resultfile = data_base_dir + 'keyframes.txt'
+    if os.path.exists(resultfile):
+        os.remove(resultfile)
+    thefile = open(resultfile, 'w')
+    for i in keyframes:
+        thefile.write("%s\n" % i)
     
     # divide the sequence into shots
     #sub_sequences = data_base_dir + 'subsequences.txt'
@@ -242,7 +246,7 @@ def main(args):
     #    offile.write('%s %.4f\n' % (classifiedgood[i], opticalflowscore[i]))         
     
     print '%d optical flow local minima' % len(localminima)
-    print 'Selected %d / %d (%.2f%%) frames as keyframes' % (final_valid_frames, len(filelist), 100.0*float(len(keyframes))/float(len(filelist)))
+    print 'Selected %d / %d (%.2f%%) frames as keyframes' % (final_valid_frames, len(filelist), 100.0*final_valid_frames/float(len(filelist)))
     print 'Split the sequence into %d sub-sequences' % subid
     
 if __name__ == '__main__':
@@ -259,10 +263,10 @@ if __name__ == '__main__':
         #default="/home/ruibinma/Desktop/",
         help="data_base_dir: this folder should contain the folder images-raw")
     parser.add_argument("--min_shot_length", type=int, 
-        default=40,
+        default=50,
         help="minimum number of frames that a shot should contain")
     parser.add_argument("--nmins_window_size", type=int, 
-        default=301,
+        default=501,
         help="window size of non-minimum suppression")
     parser.add_argument("--percentile_threshold", type=int, 
         default=99,
@@ -270,6 +274,9 @@ if __name__ == '__main__':
     parser.add_argument("--absolute_threshold", type=int, 
         default=5,
         help="absolute threshold for optical flow boundary detection (in pixel)")
+    parser.add_argument("--ignore_ends", type=bool, 
+        default=True,
+        help="whether ignore the start the end 10 percent sequence")
     args = parser.parse_args()
     start_time = time.time()
     main(args)
