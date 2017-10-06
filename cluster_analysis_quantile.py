@@ -14,7 +14,10 @@ from pyclustering.cluster.xmeans import xmeans
 from pyclustering.cluster.kmeans import kmeans
 from pyclustering.utils import draw_clusters
 
-base_folder = '/home/ruibinma/throat/003/'
+#base_folder = '/home/ruibinma/throat/003/'
+base_folder = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/'
+#os.system('rm -r ' + base_folder + 'cluster*')
+
 folder = base_folder + 'keyframes/'
 fname = base_folder + 'keyframes.txt'
 imglist = []
@@ -39,29 +42,40 @@ for imgname in imglist:
     #features.append([c0])
     features.append(feature)
 
+features = np.asarray(features, dtype = np.float32)
 
-#cm = [[128.0 for i in range(D*(N-1))]]
-cm = [[float(random.randint(0, 255)) for i in range(D * (N - 1))] for _ in range(K)]
-#cm = [[128.0 for i in range(D * (N - 1))] for _ in range(K)]
-print cm
-print len(cm)
+# Define criteria = ( type, max_iter = 10 , epsilon = 1.0 )
+criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
 
-#features = [[0.,0.],[1.,1.]]
-#cm = [0.5, 0.5]
-#print features
-kmeans_instance = kmeans(features, cm)
-kmeans_instance.process()
-clusters = kmeans_instance.get_clusters()
+# Set flags (Just to avoid line break in the code)
+flags = cv2.KMEANS_RANDOM_CENTERS
+
+# Apply KMeans
+compactness,labels,centers = cv2.kmeans(features, K, None, criteria, 10, flags)
+labels = np.asarray(np.squeeze(labels), dtype=int)
+ids = np.asarray(range(len(imglist)), dtype=int)
+#kmeans_instance = kmeans(features, cm)
+#kmeans_instance.process()
+#clusters = kmeans_instance.get_clusters()
 #xmeans_instance = xmeans(features, cm, 5, ccore=False)
 #xmeans_instance.process()
 #clusters = xmeans_instance.get_clusters()
-print len(clusters)
+#print len(clusters)
 #draw_clusters(features, xmeans_instance.get_clusters())
 
-for i in range(len(clusters)):
-    subfolder = base_folder + 'cluster' + str(i)
+count = 0
+minLength = 50
+for i in range(max(labels)+1):
+    cluster = ids[labels == i]
+    if len(cluster) < minLength:
+        continue
+    
+    subfolder = base_folder + 'cluster' + str(count)
     if os.path.isdir(subfolder):
         rmtree(subfolder)
     os.mkdir(subfolder)
-    for item in clusters[i]:
+    
+    for item in cluster:
         os.system('cp ' + base_folder + 'images-raw/' + imglist[item] + ' ' + subfolder)
+    
+    count = count + 1
