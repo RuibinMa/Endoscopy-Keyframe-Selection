@@ -6,10 +6,12 @@ Created on Oct 5, 2017
 from os import listdir
 import os
 import cv2
+import random
 import numpy as np
 from Homography import readImage
 from shutil import rmtree
 from pyclustering.cluster.xmeans import xmeans
+from pyclustering.cluster.kmeans import kmeans
 from pyclustering.utils import draw_clusters
 
 base_folder = '/home/ruibinma/throat/003/'
@@ -21,38 +23,39 @@ with open(fname, 'r') as ins:
         imglist.append(line.rstrip('\n'))
 
 features = []
-cm0 = 0.
-cm1 = 0.
-cm2 = 0.
+N = 10
+D = 3
+K = 10
 for imgname in imglist:
     img = cv2.imread(folder + imgname, 1)
     #print img.shape
-    #img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     #print img.shape
-    c0 = np.mean(img[:,:,0])
-    c1 = np.mean(img[:,:,1])
-    c2 = np.mean(img[:,:,2])
-    
+    feature = []
+    for dim in range(D):
+        for i in range(1, N):
+            #print 100*float(i)/float(N)
+            feature.append(np.percentile(img[:,:,dim].flat, 100*float(i)/float(N)))
     #features.append([c0])
-    features.append([c0, c1, c2])
-    cm0 = cm0 + c0
-    cm1 = cm1 + c1
-    cm2 = cm2 + c2
+    features.append(feature)
 
-cm0 = cm0 / len(features)
-cm1 = cm1 / len(features)
-cm2 = cm2 / len(features)
-#cm = [cm0]
-#cm = [[cm0, cm1, cm2]]
-cm = [[0.,0.,0.,],[255.,255.,255.]]
+
+#cm = [[128.0 for i in range(D*(N-1))]]
+cm = [[float(random.randint(0, 255)) for i in range(D * (N - 1))] for _ in range(K)]
+#cm = [[128.0 for i in range(D * (N - 1))] for _ in range(K)]
 print cm
+print len(cm)
 
 #features = [[0.,0.],[1.,1.]]
 #cm = [0.5, 0.5]
-xmeans_instance = xmeans(features, cm, 5, ccore=False)
-xmeans_instance.process()
-clusters = xmeans_instance.get_clusters()
-print clusters
+#print features
+kmeans_instance = kmeans(features, cm)
+kmeans_instance.process()
+clusters = kmeans_instance.get_clusters()
+#xmeans_instance = xmeans(features, cm, 5, ccore=False)
+#xmeans_instance.process()
+#clusters = xmeans_instance.get_clusters()
+print len(clusters)
 #draw_clusters(features, xmeans_instance.get_clusters())
 
 for i in range(len(clusters)):

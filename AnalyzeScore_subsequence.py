@@ -20,7 +20,8 @@ from scipy.ndimage.filters import maximum_filter1d
 
 score = []
 imgnames = []
-fname = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/opticalflowscore.txt'
+#fname = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/opticalflowscore.txt'
+fname = '/home/ruibinma/throat/004/opticalflowscore.txt'
 with open(fname, 'r') as ins:
     for line in ins:
         pair = line.split()
@@ -29,7 +30,7 @@ with open(fname, 'r') as ins:
         score.append(float(pair[1]))
 
 
-threshold = np.percentile(score, 95)
+threshold = np.percentile(score, 99)
 #scoreextrema = minimum_filter1d(input=score, size= len(score) / 5)
 scoreextrema = maximum_filter1d(input=score, size = 301)
 boundaries = []
@@ -41,9 +42,9 @@ for i in range(len(score)):
         localextrema.append(score[i])
         localextremaids.append(i)
 
-#print localextremaimg
-#print localextrema
-#print len(localextrema)
+print boundaries
+print localextrema
+print len(localextrema)
 
 
 
@@ -52,15 +53,15 @@ plt.plot(score)
 plt.plot(localextremaids, localextrema, 'ro')
 plt.show()
 
-from Homography import EstimateHomography
-from Homography import readImage
-imgname1 = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/images-raw/frame4164.jpg'
-imgname2 = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/images-raw/frame4175.jpg'
-img1 = readImage(imgname1)
-img2 = readImage(imgname2)
+#from Homography import EstimateHomography
+#from Homography import readImage
+#imgname1 = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/images-raw/frame4164.jpg'
+#imgname2 = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/images-raw/frame4175.jpg'
+#img1 = readImage(imgname1)
+#img2 = readImage(imgname2)
 
-H = EstimateHomography(estimation_thresh=0.6, img1=img1, img2=img2, use_builtin_ransac=True)
-warpped = cv2.warpPerspective(img1, H, (img2.shape[1], img2.shape[0]))
+#H = EstimateHomography(estimation_thresh=0.6, img1=img1, img2=img2, use_builtin_ransac=True)
+#warpped = cv2.warpPerspective(img1, H, (img2.shape[1], img2.shape[0]))
 
-score = correlation_coefficient(warpped, img2)
-print score
+#score = correlation_coefficient(warpped, img2)
+#print score

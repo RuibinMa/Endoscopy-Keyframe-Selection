@@ -108,8 +108,14 @@ def main(args):
                     cur_of = rgb2gray(im)
                     flow = cv2.calcOpticalFlowFarneback(prev_of, cur_of, None, 0.5, 3, 15, 3, 5, 1.2, 0)
                     opticalflowscore.append((np.sum(np.absolute(flow[..., 0])) + np.sum(np.absolute(flow[..., 1]))) / cur_of.size)
+                #if imfile == 'frame2967.jpg':
+                #    print opticalflowscore[-1]
+                #    temp = Image.open(data_dir + classifiedgood[-2])
+                #    temp = np.array(temp, dtype=np.float32)
+                #    temp = rgb2gray(temp)
+                #    print temp - prev_of
+                #    print imfile
                 prev_of = cur_of
-                
     # find the local minima of the optical flow motion estimation
     assert len(opticalflowscore) == len(classifiedgood)
     localminima = []
@@ -238,12 +244,12 @@ def main(args):
     #for i in range(len(score)):
     #    subfile.write('%s %.4f\n' % (keyframes[i], score[i]))
     
-    #offilename = data_base_dir + 'opticalflowscore.txt'
-    #if os.path.exists(offilename):
-    #    os.remove(offilename)
-    #offile = open(offilename, 'w')
-    #for i in range(len(opticalflowscore)):
-    #    offile.write('%s %.4f\n' % (classifiedgood[i], opticalflowscore[i]))         
+    offilename = data_base_dir + 'opticalflowscore.txt'
+    if os.path.exists(offilename):
+        os.remove(offilename)
+    offile = open(offilename, 'w')
+    for i in range(len(opticalflowscore)):
+        offile.write('%s %.4f\n' % (classifiedgood[i], opticalflowscore[i]))         
     
     print '%d optical flow local minima' % len(localminima)
     print 'Selected %d / %d (%.2f%%) frames as keyframes' % (final_valid_frames, len(filelist), 100.0*final_valid_frames/float(len(filelist)))
@@ -259,8 +265,8 @@ if __name__ == '__main__':
         default=True,
         help="whether use homography as a further step to extract frames")
     parser.add_argument("--dir", type=str, 
-        default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
-        #default="/home/ruibinma/Desktop/",
+        #default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
+        default="/home/ruibinma/throat/004/",
         help="data_base_dir: this folder should contain the folder images-raw")
     parser.add_argument("--min_shot_length", type=int, 
         default=50,
