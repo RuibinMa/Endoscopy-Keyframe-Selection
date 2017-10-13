@@ -1,5 +1,6 @@
 eclipse.preferences.version=1
 encoding/KeyframeSelection.py=utf-8
+encoding/KeyframeSelection_flownet.py=utf-8
 encoding/defsolver.py=utf-8
 encoding/infer.py=utf-8
 encoding/pickimagenet.py=utf-8

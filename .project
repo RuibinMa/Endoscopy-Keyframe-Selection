@@ -14,4 +14,11 @@
 	<natures>
 		<nature>org.python.pydev.pythonNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>flownet2</name>
+			<type>2</type>
+			<location>/playpen/software/flownet2</location>
+		</link>
+	</linkedResources>
 </projectDescription>

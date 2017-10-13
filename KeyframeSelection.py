@@ -9,7 +9,6 @@ Created on Fri Sep 29 14:00:00 2017
 from PIL import Image
 
 import cv2
-import os
 from shutil import rmtree
 from pickimagenet import *
 
@@ -106,7 +105,7 @@ def main(args):
                     cur_of = rgb2gray(im)     
                 else:
                     cur_of = rgb2gray(im)
-                    flow = cv2.calcOpticalFlowFarneback(prev_of, cur_of, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+                    flow = cv2.calcOpticalFlowFarneback(prev_of, cur_of, 0.5, 3, 15, 3, 5, 1.2, 0)
                     opticalflowscore.append((np.sum(np.absolute(flow[..., 0])) + np.sum(np.absolute(flow[..., 1]))) / cur_of.size)
                 #if imfile == 'frame2967.jpg':
                 #    print opticalflowscore[-1]
@@ -265,8 +264,8 @@ if __name__ == '__main__':
         default=True,
         help="whether use homography as a further step to extract frames")
     parser.add_argument("--dir", type=str, 
-        #default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
-        default="/home/ruibinma/throat/004/",
+        default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
+        #default="/home/ruibinma/throat/004/",
         help="data_base_dir: this folder should contain the folder images-raw")
     parser.add_argument("--min_shot_length", type=int, 
         default=50,

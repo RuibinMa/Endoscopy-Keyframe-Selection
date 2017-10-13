@@ -77,7 +77,7 @@ def findFeatures(img):
     #print("Finding Features...")
     #sift = cv2.SIFT()
     #keypoints, descriptors = sift.detectAndCompute(img, None)
-    sift = cv2.xfeatures2d.SIFT_create()
+    sift = cv2.SIFT()
     keypoints, descriptors = sift.detectAndCompute(img, None)
 
     #img = cv2.drawKeypoints(img, keypoints)
