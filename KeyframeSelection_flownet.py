@@ -15,7 +15,7 @@ def rgb2gray(rgb):
 
 def main(args):
     data_base_dir = args.dir
-    data_dir= data_base_dir + "images-raw/"
+    data_dir= data_base_dir + "images/"
     
     if os.path.isdir(data_base_dir + 'classifiedgood'):
         rmtree(data_base_dir + 'classifiedgood')
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     parser.add_argument("--dir", type=str, 
         default="/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_003/",
         #default="/home/ruibinma/throat/004/",
-        help="data_base_dir: this folder should contain the folder images-raw")
+        help="data_base_dir: this folder should contain the folder images")
     
     parser.add_argument('--caffemodel', help='path to model', 
                         default = '/playpen/software/flownet2/models/FlowNet2/FlowNet2_weights.caffemodel.h5')

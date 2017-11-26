@@ -23,7 +23,7 @@ def analyze_score(data_base_dir='/playpen/throat/Endoscope_Study/UNC_HN_Laryngos
                 imgnames.append(imgname)
                 score.append(float(pair[1]))
     
-    folder = data_base_dir + 'images-raw/'
+    folder = data_base_dir + 'images/'
     outputfolder = data_base_dir + 'keyframes/'
     
     if os.path.isdir(outputfolder):
@@ -48,27 +48,35 @@ def analyze_score(data_base_dir='/playpen/throat/Endoscope_Study/UNC_HN_Laryngos
     boundaries = []
     ignore_ends = True  
     #------------------------------------ boundary detection method 2:
-    if(ignore_ends):
-        score[:int(len(score)*0.1)] = np.ones_like(score[:int(len(score)*0.1)]) 
-        score[int(len(score)*0.9):] = np.ones_like(score[int(len(score)*0.9):])
+#     if(ignore_ends):
+#         score[:int(len(score)*0.1)] = np.ones_like(score[:int(len(score)*0.1)]) 
+#         score[int(len(score)*0.9):] = np.ones_like(score[int(len(score)*0.9):])
+#         
+#     threshold = np.percentile(score, 1)
+#     scoreextrema = minimum_filter1d(input=score, size = 301)
+#     localextrema = []
+#     localextremaids = []
+#     for i in range(len(score)):
+#         if score[i] == scoreextrema[i] and score[i] < threshold and score[i] < 0.8:
+#             boundaries.append(imgnames[i])
+#             localextrema.append(score[i])
+#             localextremaids.append(i)  
+    #------------------------------------- boundary detection method 3:
+    # brutely divide the sequence into 100-frame chunks
+    stepsize = 100;
+    tempid = stepsize - 1;
+    while(tempid < len(score)):
+        boundaries.append(imgnames[tempid])
+        tempid += stepsize
         
-    threshold = np.percentile(score, 1)
-    scoreextrema = minimum_filter1d(input=score, size = 301)
-    localextrema = []
-    localextremaids = []
-    for i in range(len(score)):
-        if score[i] == scoreextrema[i] and score[i] < threshold and score[i] < 0.8:
-            boundaries.append(imgnames[i])
-            localextrema.append(score[i])
-            localextremaids.append(i)  
     
     # ----------------------------------- boundary detection results:
     #plt.plot(localextremaids, localextrema, 'ro')
-    print 'number of boundaries = %d' % len(localextrema)
+    print 'number of boundaries = %d' % len(boundaries)
     print 'boundaries :',
     print boundaries
-    print 'boundaries motion values: ',
-    print localextrema
+    #print 'boundaries motion values: ',
+    #print localextrema
     
     #------------------------------------ split video by boundaries
     shots = []
