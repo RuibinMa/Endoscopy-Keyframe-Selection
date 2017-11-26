@@ -48,26 +48,26 @@ def analyze_score(data_base_dir='/playpen/throat/Endoscope_Study/UNC_HN_Laryngos
     boundaries = []
     ignore_ends = True  
     #------------------------------------ boundary detection method 2:
-#     if(ignore_ends):
-#         score[:int(len(score)*0.1)] = np.ones_like(score[:int(len(score)*0.1)]) 
-#         score[int(len(score)*0.9):] = np.ones_like(score[int(len(score)*0.9):])
-#         
-#     threshold = np.percentile(score, 1)
-#     scoreextrema = minimum_filter1d(input=score, size = 301)
-#     localextrema = []
-#     localextremaids = []
-#     for i in range(len(score)):
-#         if score[i] == scoreextrema[i] and score[i] < threshold and score[i] < 0.8:
-#             boundaries.append(imgnames[i])
-#             localextrema.append(score[i])
-#             localextremaids.append(i)  
+    if(ignore_ends):
+        score[:int(len(score)*0.1)] = np.ones_like(score[:int(len(score)*0.1)]) 
+        score[int(len(score)*0.9):] = np.ones_like(score[int(len(score)*0.9):])
+         
+    threshold = np.percentile(score, 1)
+    scoreextrema = minimum_filter1d(input=score, size = 301)
+    localextrema = []
+    localextremaids = []
+    for i in range(len(score)):
+        if score[i] == scoreextrema[i] and score[i] < threshold and score[i] < 0.8:
+            boundaries.append(imgnames[i])
+            localextrema.append(score[i])
+            localextremaids.append(i)  
     #------------------------------------- boundary detection method 3:
     # brutely divide the sequence into 100-frame chunks
-    stepsize = 100;
-    tempid = stepsize - 1;
-    while(tempid < len(score)):
-        boundaries.append(imgnames[tempid])
-        tempid += stepsize
+#     stepsize = 100;
+#     tempid = stepsize - 1;
+#     while(tempid < len(score)):
+#         boundaries.append(imgnames[tempid])
+#         tempid += stepsize
         
     
     # ----------------------------------- boundary detection results:
@@ -115,4 +115,11 @@ def analyze_score(data_base_dir='/playpen/throat/Endoscope_Study/UNC_HN_Laryngos
             print '     discarded'
 
 if __name__ == '__main__':
-    analyze_score()
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Select Keyframes from A Endoscopic Video.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--data_base_dir", type=str, 
+        default='/home/ruibinma/Desktop/projecttest/')
+    args = parser.parse_args()
+    analyze_score(args.data_base_dir)

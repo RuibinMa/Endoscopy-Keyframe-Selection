@@ -13,7 +13,8 @@ from scipy.ndimage.filters import maximum_filter1d
 
 score = []
 imgnames = []
-data_base_dir = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_004/'
+#data_base_dir = '/playpen/throat/Endoscope_Study/UNC_HN_Laryngoscopy_004/'
+data_base_dir = '/home/ruibinma/Desktop/projecttest/'
 fname = data_base_dir + 'opticalflowscore2.txt'
 #fname = '/home/ruibinma/throat/004/opticalflowscore.txt'
 with open(fname, 'r') as ins:
@@ -22,15 +23,41 @@ with open(fname, 'r') as ins:
         imgname = pair[0]
         imgnames.append(imgname)
         score.append(float(pair[1]))
+ignore_ends = True
+if(ignore_ends):
+    score[:int(len(score)*0.03)] = np.ones_like(score[:int(len(score)*0.03)]) 
+    score[int(len(score)*0.97):] = np.ones_like(score[int(len(score)*0.97):])
 
-
-folder = data_base_dir + 'images-raw/'
+folder = data_base_dir + 'images/'
 outputfolder = data_base_dir + 'keyframes/'
 
 if os.path.isdir(outputfolder):
     rmtree(outputfolder)
 os.mkdir(outputfolder)
 
+plt.figure()
+ntotal = len(os.listdir(folder)) # 0 --- ntotal-1
+choosed = [0 for i in range(ntotal)]
+sampleids = []
+samples = []
+samplescores = []
+for i in range(len(imgnames)):
+    ii = int(imgnames[i][5:9])
+    choosed[ii] = 1;
+    sampleids.append(ii)
+    samples.append(0)
+    samplescores.append(score[i])
+
+choosed = np.asarray(choosed, dtype=np.float32)
+rate = np.convolve(a=choosed, v=np.ones((60,))/60.0, mode='same')
+
+h_samples, = plt.plot(sampleids, samples, 'r.')
+h_scores,  = plt.plot(sampleids, samplescores, 'b+')
+h_rate,    = plt.plot(rate)
+h_low,     = plt.plot(2600, rate[2600], 'b^')
+h_high,    = plt.plot(3770, rate[3770], 'r^')
+plt.legend([h_samples, h_scores, h_rate, h_low, h_high], ['Samples', 'Optical Flow Scores', 'Sample Rate', 'Low Motion Part Example', 'High Motion Part Example'])
+plt.show()
 #for i in range(len(imgnames)):
 #    os.system('cp ' + folder + imgnames[i] + ' ' + outputfolder + imgnames[i])
 #exit()
@@ -64,8 +91,7 @@ for i in range(len(score)):
 # boundary detection
 
 boundaries = []
-ignore_ends = True
-#plt.figure()
+plt.figure()
 #------------------------------------ boundary detection method 1:
 #threshold = np.percentile(score, 99)
 #scoreextrema = minimum_filter1d(input=score, size= len(score) / 5)
@@ -86,9 +112,6 @@ ignore_ends = True
 #plt.show()
 
 #------------------------------------ boundary detection method 2:
-if(ignore_ends):
-    score[:int(len(score)*0.1)] = np.ones_like(score[:int(len(score)*0.1)]) 
-    score[int(len(score)*0.9):] = np.ones_like(score[int(len(score)*0.9):])
     
 threshold = np.percentile(score, 1)
 #scoreextrema = minimum_filter1d(input=score, size= len(score) / 5)
@@ -101,7 +124,7 @@ for i in range(len(score)):
         localextrema.append(score[i])
         localextremaids.append(i)
 
-#plt.plot(score)
+plt.plot(score)
 #plt.show()
 
 #------------------------------------ boundary detection method 3:
@@ -131,14 +154,14 @@ for i in range(len(score)):
 #plt.plot(acc_motions)        
 
 # ----------------------------------- boundary detection results:
-#plt.plot(localextremaids, localextrema, 'ro')
+plt.plot(localextremaids, localextrema, 'ro')
 print 'number of boundaries = %d' % len(localextrema)
 print 'boundaries :',
 print boundaries
 print 'boundaries motion values: ',
 print localextrema
 
-#plt.show()
+plt.show()
 
 #------------------------------------ split video by boundaries
 shots = []
